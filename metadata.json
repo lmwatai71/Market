@@ -1,0 +1,9 @@
+{
+  "name": "Hawaiʻi Marketplace",
+  "description": "A local community marketplace for buying, selling, and trading goods in Hawaiʻi with an AI assistant.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

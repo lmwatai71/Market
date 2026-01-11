@@ -1,0 +1,208 @@
+import React, { useState } from 'react';
+import { User as UserType } from '../types';
+import { MOCK_USER, APP_NAME, APPROVED_LOCATIONS } from '../constants';
+import { Mail, Lock, User, MapPin, ArrowRight } from 'lucide-react';
+import PhoneVerification from './PhoneVerification';
+
+interface AuthViewProps {
+  onLogin: (user: UserType) => void;
+}
+
+const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    location: '',
+  });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [pendingUser, setPendingUser] = useState<UserType | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    // Simulate network delay
+    setTimeout(() => {
+      setIsLoading(false);
+      
+      let userAttempt: UserType | null = null;
+
+      if (isLogin) {
+        // Mock Login
+        if (formData.email && formData.password) {
+             userAttempt = { ...MOCK_USER, id: 'u_login_' + Date.now() };
+        } else {
+            setError('Please enter email and password.');
+            return;
+        }
+      } else {
+        // Sign Up
+        if (formData.email && formData.password && formData.name && formData.location) {
+          userAttempt = {
+            id: `u_${Date.now()}`,
+            name: formData.name,
+            location: formData.location,
+            rating: 5.0,
+            profilePhoto: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`,
+            verified: false,
+            createdAt: new Date().toISOString(),
+            island: 'hawaii'
+          };
+        } else {
+          setError('Please fill in all required fields, including location.');
+          return;
+        }
+      }
+
+      if (userAttempt) {
+        // Trigger Verification Flow
+        setPendingUser(userAttempt);
+        setIsVerifying(true);
+      }
+
+    }, 1000);
+  };
+
+  const handleVerificationSuccess = (phoneNumber: string) => {
+    if (pendingUser) {
+      const verifiedUser = {
+        ...pendingUser,
+        verified: true,
+      };
+      onLogin(verifiedUser);
+    }
+  };
+
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen bg-cloud flex flex-col justify-center items-center p-4">
+        <PhoneVerification 
+          onVerified={handleVerificationSuccess}
+          onCancel={() => {
+             setIsVerifying(false);
+             setPendingUser(null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-cloud flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-mist">
+        
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-kai to-lau p-8 text-center">
+          <h1 className="text-3xl font-serif font-bold text-white mb-2">{APP_NAME}</h1>
+          <p className="text-white/80 text-sm">
+            {isLogin ? 'Welcome back to the marketplace' : 'Join our Hawaiʻi Island community'}
+          </p>
+        </div>
+
+        {/* Form Section */}
+        <div className="p-8">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 text-lava/40" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-mist focus:border-kai focus:ring-2 focus:ring-kai/20 outline-none transition text-lava"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    required={!isLogin}
+                  />
+                </div>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 text-lava/40" size={20} />
+                  <select
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-mist focus:border-kai focus:ring-2 focus:ring-kai/20 outline-none transition text-lava bg-white appearance-none"
+                    value={formData.location}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    required={!isLogin}
+                  >
+                    <option value="" disabled>Select Location (Hawaiʻi Island)</option>
+                    {APPROVED_LOCATIONS.map(loc => (
+                      <option key={loc} value={loc}>{loc}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-3 pointer-events-none">
+                     <svg className="w-5 h-5 text-lava/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
+                </div>
+                <div className="text-[10px] text-lava/60 px-1">
+                  * Piko Market is currently available only on Hawaiʻi Island.
+                </div>
+              </>
+            )}
+
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 text-lava/40" size={20} />
+              <input
+                type="email"
+                placeholder="Email Address"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-mist focus:border-kai focus:ring-2 focus:ring-kai/20 outline-none transition text-lava"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-lava/40" size={20} />
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-mist focus:border-kai focus:ring-2 focus:ring-kai/20 outline-none transition text-lava"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                required
+              />
+            </div>
+
+            {error && <p className="text-alaea text-sm text-center">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-kai text-white font-semibold py-3 rounded-xl hover:bg-kai/90 transition shadow-md flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  {isLogin ? 'Sign In' : 'Create Account'}
+                  <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-lava/60 text-sm">
+              {isLogin ? "Don't have an account?" : "Already have an account?"}
+              <button
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError('');
+                }}
+                className="ml-1 text-kai font-semibold hover:underline"
+              >
+                {isLogin ? 'Sign up' : 'Log in'}
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AuthView;
