@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Search, MessageCircle, User as UserIcon, Map, Briefcase } from 'lucide-react';
 import Header from './components/Header';
+import SafetyBanner from './components/SafetyBanner';
 import BrowseView from './components/BrowseView';
 import ChatInterface from './components/ChatInterface';
 import AuthView from './components/AuthView';
@@ -8,7 +9,7 @@ import ProfileView from './components/ProfileView';
 import MapView from './components/MapView';
 import ToolsView from './components/ToolsView';
 import { MOCK_LISTINGS } from './constants';
-import { Listing, ViewState, SearchFilters, User } from './types';
+import { Listing, ViewState, SearchFilters, User, ChatMessage } from './types';
 
 const App: React.FC = () => {
   // Auth State
@@ -23,6 +24,22 @@ const App: React.FC = () => {
     maxPrice: '',
     location: ''
   });
+  
+  // Chat State (Lifted to persist across navigation)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: 'welcome',
+      role: 'model',
+      text: "Aloha! 🌺 Welcome to Piko Market, Hawaiʻi Island's local marketplace. I can help you find items, create a listing in your district, or draft a message. Note: We are currently exclusive to the Big Island.",
+      timestamp: new Date()
+    }
+  ]);
+  
+  // Launch System Check
+  useEffect(() => {
+    console.log("SYSTEM CHECK: Hawaiʻi Island Configuration Loaded.");
+    console.log("SYSTEM CHECK: Security Protocols Active.");
+  }, []);
 
   // Handle Login / Signup
   const handleLogin = (user: User) => {
@@ -152,6 +169,7 @@ const App: React.FC = () => {
         onMenuClick={() => {}} 
         onProfileClick={() => setCurrentView('profile')}
       />
+      <SafetyBanner />
 
       <main className="pb-24"> {/* Padding bottom for Nav */}
         
@@ -254,6 +272,8 @@ const App: React.FC = () => {
           <ChatInterface 
             onSearchAction={handleSearchAction}
             onCreateAction={handleCreateAction}
+            messages={chatMessages}
+            setMessages={setChatMessages}
           />
         )}
 

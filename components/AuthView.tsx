@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User as UserType } from '../types';
 import { MOCK_USER, APP_NAME, APPROVED_LOCATIONS } from '../constants';
-import { Mail, Lock, User, MapPin, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, MapPin, ArrowRight, ShieldCheck } from 'lucide-react';
 import PhoneVerification from './PhoneVerification';
 
 interface AuthViewProps {
@@ -18,6 +18,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [pendingUser, setPendingUser] = useState<UserType | null>(null);
 
@@ -25,47 +26,53 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    setLoadingText('Authenticating...');
 
-    // Simulate network delay
+    // Simulate Security Checks
     setTimeout(() => {
-      setIsLoading(false);
+      setLoadingText('Checking location eligibility...');
       
-      let userAttempt: UserType | null = null;
+      setTimeout(() => {
+         // Finalize Auth Logic
+         setIsLoading(false);
+         setLoadingText('');
+         
+         let userAttempt: UserType | null = null;
 
-      if (isLogin) {
-        // Mock Login
-        if (formData.email && formData.password) {
-             userAttempt = { ...MOCK_USER, id: 'u_login_' + Date.now() };
-        } else {
-            setError('Please enter email and password.');
-            return;
-        }
-      } else {
-        // Sign Up
-        if (formData.email && formData.password && formData.name && formData.location) {
-          userAttempt = {
-            id: `u_${Date.now()}`,
-            name: formData.name,
-            location: formData.location,
-            rating: 5.0,
-            profilePhoto: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`,
-            verified: false,
-            createdAt: new Date().toISOString(),
-            island: 'hawaii'
-          };
-        } else {
-          setError('Please fill in all required fields, including location.');
-          return;
-        }
-      }
+         if (isLogin) {
+           // Mock Login
+           if (formData.email && formData.password) {
+                userAttempt = { ...MOCK_USER, id: 'u_login_' + Date.now() };
+           } else {
+               setError('Please enter email and password.');
+               return;
+           }
+         } else {
+           // Sign Up
+           if (formData.email && formData.password && formData.name && formData.location) {
+             userAttempt = {
+               id: `u_${Date.now()}`,
+               name: formData.name,
+               location: formData.location,
+               rating: 5.0,
+               profilePhoto: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`,
+               verified: false,
+               createdAt: new Date().toISOString(),
+               island: 'hawaii'
+             };
+           } else {
+             setError('Please fill in all required fields, including location.');
+             return;
+           }
+         }
 
-      if (userAttempt) {
-        // Trigger Verification Flow
-        setPendingUser(userAttempt);
-        setIsVerifying(true);
-      }
-
-    }, 1000);
+         if (userAttempt) {
+           // Trigger Verification Flow
+           setPendingUser(userAttempt);
+           setIsVerifying(true);
+         }
+      }, 1200); // Wait for "location check"
+    }, 800); // Wait for "authenticating"
   };
 
   const handleVerificationSuccess = (phoneNumber: string) => {
@@ -94,12 +101,18 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-cloud flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-mist">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-mist relative">
         
+        {/* Secure Launch Badge */}
+        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md rounded-full px-2 py-1 flex items-center gap-1 text-[10px] text-white font-bold border border-white/30 z-10">
+           <ShieldCheck size={10} /> SECURE MODE
+        </div>
+
         {/* Header Section */}
-        <div className="bg-gradient-to-r from-kai to-lau p-8 text-center">
-          <h1 className="text-3xl font-serif font-bold text-white mb-2">{APP_NAME}</h1>
-          <p className="text-white/80 text-sm">
+        <div className="bg-gradient-to-r from-kai to-lau p-8 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+          <h1 className="text-3xl font-serif font-bold text-white mb-2 relative z-10">{APP_NAME}</h1>
+          <p className="text-white/80 text-sm relative z-10">
             {isLogin ? 'Welcome back to the marketplace' : 'Join our Hawaiʻi Island community'}
           </p>
         </div>
@@ -167,7 +180,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
               />
             </div>
 
-            {error && <p className="text-alaea text-sm text-center">{error}</p>}
+            {error && <p className="text-alaea text-sm text-center animate-pulse">{error}</p>}
 
             <button
               type="submit"
@@ -175,7 +188,10 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
               className="w-full bg-kai text-white font-semibold py-3 rounded-xl hover:bg-kai/90 transition shadow-md flex items-center justify-center gap-2"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {loadingText}
+                </div>
               ) : (
                 <>
                   {isLogin ? 'Sign In' : 'Create Account'}

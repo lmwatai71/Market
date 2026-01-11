@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, Image as ImageIcon, MapPin, X, Camera } from 'lucide-react';
+import { Send, Sparkles, Image as ImageIcon, MapPin, X, Camera, AlertTriangle, ExternalLink } from 'lucide-react';
 import { ChatMessage, ListingDraft, SearchFilters, MessageDraft, Listing } from '../types';
 import { sendMessageToGemini, extractJsonFromResponse } from '../services/geminiService';
 import CameraCapture from './CameraCapture';
@@ -7,20 +7,19 @@ import CameraCapture from './CameraCapture';
 interface ChatInterfaceProps {
   onSearchAction: (filters: SearchFilters['data']) => void;
   onCreateAction: (listing: Listing) => void;
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSearchAction, onCreateAction }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
+  onSearchAction, 
+  onCreateAction,
+  messages,
+  setMessages
+}) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'model',
-      text: "Aloha! 🌺 Welcome to Piko Market, Hawaiʻi Island's local marketplace. I can help you find items, create a listing in your district, or draft a message. Note: We are currently exclusive to the Big Island.",
-      timestamp: new Date()
-    }
-  ]);
-
+  
   const [selectedImage, setSelectedImage] = useState<{ data: string; mimeType: string; preview: string } | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   
@@ -190,54 +189,69 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSearchAction, onCreateA
                        <p className="font-semibold text-koa text-xs uppercase tracking-wide">Listing Draft</p>
                        <div className="bg-white p-2 rounded-lg border border-mist flex gap-3">
                           <div className="w-16 h-16 bg-gray-200 rounded-md shrink-0 overflow-hidden">
-                             {/* Use draft photo if available */}
-                             {(msg.actionData as ListingDraft).data.photos.length > 0 ? (
-                               <img src={(msg.actionData as ListingDraft).data.photos[0]} className="w-full h-full object-cover" alt="Draft" />
-                             ) : (
-                               <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">No img</div>
-                             )}
+                             { (msg.actionData.data as ListingDraft['data']).photos?.[0] ? (
+                               <img src={(msg.actionData.data as ListingDraft['data']).photos[0]} className="w-full h-full object-cover" />
+                             ) : <div className="w-full h-full flex items-center justify-center text-xs">No Img</div>}
                           </div>
-                          <div className="overflow-hidden">
-                            <p className="font-medium truncate text-lava">{(msg.actionData as ListingDraft).data.title}</p>
-                            <p className="text-kai font-bold">${(msg.actionData as ListingDraft).data.price}</p>
-                            <p className="text-[10px] text-lava/60">{(msg.actionData as ListingDraft).data.location} (Hawaiʻi Island)</p>
+                          <div>
+                            <p className="font-bold text-lava line-clamp-1">{(msg.actionData.data as ListingDraft['data']).title}</p>
+                            <p className="text-kai font-bold">${(msg.actionData.data as ListingDraft['data']).price}</p>
+                            <p className="text-xs text-lava/60">{(msg.actionData.data as ListingDraft['data']).location}</p>
                           </div>
                        </div>
                        <button 
                          onClick={() => handleActionClick(msg)}
-                         className="mt-1 w-full bg-lau text-white py-2 rounded-lg text-xs font-medium hover:bg-opacity-90 transition"
+                         className="bg-kai text-white text-sm font-bold py-2 rounded-lg hover:bg-kai/90 transition flex items-center justify-center gap-2 shadow-sm"
                        >
-                         Confirm & Post Listing
+                         <Send size={16} /> Post Listing
                        </button>
                     </div>
                   )}
 
                   {msg.actionData.type === 'SEARCH' && (
                     <div className="flex flex-col gap-2">
-                       <p className="font-semibold text-koa text-xs uppercase tracking-wide">Search Request</p>
-                       <p className="text-xs text-lava/80 italic">
-                         Searching for "{(msg.actionData as SearchFilters).data.searchQuery}" 
-                         {(msg.actionData as SearchFilters).data.filters.category ? ` in ${(msg.actionData as SearchFilters).data.filters.category}` : ''}
-                       </p>
-                       <button 
+                      <div className="flex items-center gap-2 text-kai font-medium">
+                        <Sparkles size={16} />
+                        <span>Search Filter Found</span>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg border border-mist text-xs text-lava space-y-1">
+                         {(msg.actionData.data as SearchFilters['data']).searchQuery && <p>Query: "{(msg.actionData.data as SearchFilters['data']).searchQuery}"</p>}
+                         {(msg.actionData.data as SearchFilters['data']).filters?.category && <p>Category: {(msg.actionData.data as SearchFilters['data']).filters.category}</p>}
+                         {(msg.actionData.data as SearchFilters['data']).filters?.location && <p>Location: {(msg.actionData.data as SearchFilters['data']).filters.location}</p>}
+                      </div>
+                      <button 
                          onClick={() => handleActionClick(msg)}
-                         className="mt-1 w-full bg-kai text-white py-2 rounded-lg text-xs font-medium hover:bg-opacity-90 transition"
+                         className="bg-white border border-kai text-kai text-sm font-bold py-2 rounded-lg hover:bg-kai/5 transition flex items-center justify-center gap-2"
                        >
-                         View Results
+                         <ExternalLink size={16} /> View Results
                        </button>
                     </div>
                   )}
 
                   {msg.actionData.type === 'MESSAGE_SELLER' && (
-                    <div className="flex flex-col gap-2">
-                       <p className="font-semibold text-koa text-xs uppercase tracking-wide">Message Draft</p>
-                       <div className="bg-white p-3 rounded-lg border border-mist text-xs text-lava/90 italic">
-                         "{(msg.actionData as MessageDraft).data.messageToSeller}"
+                     <div className="flex flex-col gap-2">
+                       {/* Safety Warning */}
+                       <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 flex gap-3 items-start">
+                          <AlertTriangle size={18} className="text-orange-600 shrink-0 mt-0.5" />
+                          <div>
+                             <p className="text-xs font-bold text-orange-800 mb-1">Safety First</p>
+                             <p className="text-[10px] text-orange-700 leading-tight">
+                               Always meet in a public place (like a police station or coffee shop). Never share verification codes or transfer money before seeing the item.
+                             </p>
+                          </div>
                        </div>
-                       <button className="mt-1 w-full bg-kai text-white py-2 rounded-lg text-xs font-medium hover:bg-opacity-90 transition">
-                         Send Message
+
+                       <p className="font-semibold text-koa text-xs uppercase tracking-wide mt-1">Message Preview</p>
+                       <div className="bg-white p-3 rounded-lg border border-mist italic text-lava/80 text-sm">
+                         "{(msg.actionData.data as MessageDraft['data']).messageToSeller}"
+                       </div>
+                       <button 
+                         className="bg-kai text-white text-sm font-bold py-2 rounded-lg hover:bg-kai/90 transition flex items-center justify-center gap-2 shadow-sm"
+                         onClick={() => alert("Message sent to seller! (Demo)")}
+                       >
+                         <Send size={16} /> Send Message
                        </button>
-                    </div>
+                     </div>
                   )}
 
                 </div>
@@ -245,85 +259,77 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onSearchAction, onCreateA
             </div>
           </div>
         ))}
-        {isLoading && (
-           <div className="flex justify-start">
-             <div className="bg-white border border-mist rounded-[18px] rounded-bl-none p-4 shadow-sm flex items-center gap-2">
-               <div className="w-2 h-2 bg-kai/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-               <div className="w-2 h-2 bg-kai/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-               <div className="w-2 h-2 bg-kai/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-             </div>
-           </div>
-        )}
         <div ref={messagesEndRef} />
-      </div>
-
-      <div className="p-4 bg-white border-t border-mist">
-        {/* Image Preview Area */}
-        {selectedImage && (
-          <div className="mb-3 flex items-start gap-2 animate-fade-in">
-             <div className="relative group">
-                <img 
-                  src={selectedImage.preview} 
-                  alt="Selected" 
-                  className="h-20 w-20 object-cover rounded-xl border border-mist shadow-sm"
-                />
-                <button 
-                  onClick={() => {
-                    setSelectedImage(null);
-                    if (fileInputRef.current) fileInputRef.current.value = '';
-                  }}
-                  className="absolute -top-2 -right-2 bg-alaea text-white rounded-full p-1 shadow-md hover:bg-alaea/90 transition"
-                >
-                  <X size={12} />
-                </button>
-             </div>
+        {isLoading && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-mist rounded-[18px] rounded-bl-none p-4 shadow-sm flex items-center gap-2">
+              <div className="w-2 h-2 bg-kai/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-kai/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-kai/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
           </div>
         )}
+      </div>
 
-        <div className="relative flex items-center gap-2">
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            accept="image/*" 
-            className="hidden" 
-            onChange={handleImageSelect}
-          />
-          
+      <div className="p-4 bg-white border-t border-mist/50">
+        <div className="relative flex items-center gap-2 bg-mist/20 p-2 pr-2 rounded-2xl border border-mist focus-within:border-kai/50 focus-within:bg-white focus-within:ring-2 focus-within:ring-kai/20 transition-all">
           <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="p-3 bg-mist/20 hover:bg-mist/40 text-lava/60 hover:text-kai rounded-full transition"
-            title="Upload from Gallery"
-          >
-            <ImageIcon size={20} />
-          </button>
-
-          <button 
-            onClick={() => setIsCameraOpen(true)}
-            className="p-3 bg-mist/20 hover:bg-mist/40 text-lava/60 hover:text-kai rounded-full transition"
-            title="Take Photo"
+             onClick={() => setIsCameraOpen(true)}
+             className="p-2 text-lava/60 hover:text-kai hover:bg-mist/30 rounded-xl transition"
+             title="Take Photo"
           >
             <Camera size={20} />
           </button>
+          
+          <button 
+             onClick={() => fileInputRef.current?.click()}
+             className="p-2 text-lava/60 hover:text-kai hover:bg-mist/30 rounded-xl transition relative"
+             title="Upload Image"
+          >
+            <ImageIcon size={20} />
+            {selectedImage && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-kai rounded-full border border-white"></span>
+            )}
+          </button>
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*"
+            onChange={handleImageSelect}
+          />
 
-          <div className="relative flex-1">
-             <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder={selectedImage ? "Add a caption..." : "Ask to list item..."}
-                className="w-full pl-4 pr-12 py-3 bg-mist/20 rounded-full border-none focus:ring-2 focus:ring-kai/20 focus:outline-none text-lava placeholder-lava/40 transition"
-             />
-          </div>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            placeholder={selectedImage ? "Describe this image..." : "Ask me anything..."}
+            className="flex-1 bg-transparent border-none outline-none text-lava placeholder:text-lava/40 text-base py-1"
+          />
           
           <button 
             onClick={handleSend}
             disabled={(!input.trim() && !selectedImage) || isLoading}
-            className="p-3 bg-kai text-white rounded-full hover:bg-kai/90 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md"
+            className={`p-2 rounded-xl transition-all shadow-sm ${
+              (!input.trim() && !selectedImage) || isLoading
+                ? 'bg-mist text-white cursor-not-allowed' 
+                : 'bg-kai text-white hover:bg-kai/90 active:scale-95'
+            }`}
           >
-            {isLoading ? <Sparkles size={20} className="animate-pulse" /> : <Send size={20} />}
+            <Send size={20} />
           </button>
         </div>
+        {selectedImage && (
+           <div className="mt-2 flex items-center gap-2 bg-white border border-mist rounded-lg p-2 w-fit shadow-sm animate-in slide-in-from-bottom-2">
+              <img src={selectedImage.preview} className="w-8 h-8 rounded object-cover border border-mist" />
+              <span className="text-xs text-lava/70 max-w-[150px] truncate">Image selected</span>
+              <button onClick={() => { setSelectedImage(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} className="p-1 hover:bg-mist/50 rounded-full">
+                <X size={14} className="text-lava/60" />
+              </button>
+           </div>
+        )}
       </div>
     </div>
   );

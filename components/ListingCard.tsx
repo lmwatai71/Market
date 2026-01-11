@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Star, Zap } from 'lucide-react';
+import { MapPin, Star, Zap, Flag } from 'lucide-react';
 import { Listing } from '../types';
 
 interface ListingCardProps {
@@ -29,10 +29,15 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick, isOwner, on
     setShowConfirm(false);
   };
 
+  const handleReport = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    alert("Thanks for reporting. Our team will review this listing shortly.");
+  };
+
   return (
     <div 
       onClick={() => onClick(listing)}
-      className="bg-white border border-mist rounded-[16px] shadow-[0_2px_6px_rgba(0,0,0,0.08)] overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer flex flex-col h-full relative"
+      className="bg-white border border-mist rounded-[16px] shadow-[0_2px_6px_rgba(0,0,0,0.08)] overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer flex flex-col h-full relative group/card"
     >
       {/* Confirmation Overlay */}
       {showConfirm && (
@@ -74,6 +79,17 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick, isOwner, on
            title="Boost Listing"
          >
            <Zap size={18} className={isBoosted ? "fill-orange-500 text-orange-500" : "fill-none"} />
+         </button>
+      )}
+
+      {/* Report Button (Visible on Hover for non-owners) */}
+      {!isOwner && !showConfirm && (
+         <button
+           onClick={handleReport}
+           className="absolute top-3 right-3 bg-white/80 backdrop-blur text-lava/40 hover:text-alaea p-2 rounded-full shadow-sm z-10 opacity-0 group-hover/card:opacity-100 transition-opacity"
+           title="Report Listing"
+         >
+           <Flag size={14} />
          </button>
       )}
 
