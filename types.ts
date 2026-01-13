@@ -14,6 +14,7 @@ export interface Listing {
   boostedUntil?: string;
   coordinates?: { x: number; y: number }; // Relative coordinates for mock map
   island: 'hawaii';
+  negotiable?: boolean;
 }
 
 export interface User {

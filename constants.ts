@@ -51,7 +51,8 @@ export const MOCK_LISTINGS: Listing[] = [
     createdAt: '2023-10-25',
     boostedUntil: '2023-11-01',
     coordinates: { x: 75, y: 40 }, // Hilo side
-    island: 'hawaii'
+    island: 'hawaii',
+    negotiable: true
   },
   {
     id: 'l2',
@@ -67,7 +68,8 @@ export const MOCK_LISTINGS: Listing[] = [
     sellerRating: 5.0,
     createdAt: '2023-10-26',
     coordinates: { x: 20, y: 50 }, // Kona side
-    island: 'hawaii'
+    island: 'hawaii',
+    negotiable: false
   },
   {
     id: 'l3',
@@ -83,7 +85,8 @@ export const MOCK_LISTINGS: Listing[] = [
     sellerRating: 4.7,
     createdAt: '2023-10-20',
     coordinates: { x: 30, y: 80 }, // South
-    island: 'hawaii'
+    island: 'hawaii',
+    negotiable: true
   },
   {
     id: 'l4',
@@ -99,7 +102,8 @@ export const MOCK_LISTINGS: Listing[] = [
     sellerRating: 4.5,
     createdAt: '2023-10-27',
     coordinates: { x: 40, y: 20 }, // North
-    island: 'hawaii'
+    island: 'hawaii',
+    negotiable: true
   }
 ];
 

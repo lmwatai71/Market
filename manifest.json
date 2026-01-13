@@ -1,0 +1,21 @@
+{
+  "short_name": "Piko Market",
+  "name": "Piko Market - Hawaiʻi",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/11542/11542718.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/11542/11542718.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2A6F97",
+  "background_color": "#FAFAF8",
+  "orientation": "portrait"
+}

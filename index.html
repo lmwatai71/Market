@@ -2,7 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#2A6F97">
+    <meta name="description" content="A local community marketplace for buying, selling, and trading goods in Hawaiʻi.">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/11542/11542718.png">
+
     <title>Hawaiʻi Marketplace</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,6 +41,7 @@
       body {
         background-color: #FAFAF8; /* Cloud White */
         color: #4A4A4A; /* Lava Rock */
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile app feel */
       }
       /* Custom Scrollbar for Chat */
       .scrollbar-hide::-webkit-scrollbar {
@@ -58,5 +66,18 @@
 </head>
   <body>
     <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('Piko Market SW registered: ', registration.scope);
+            })
+            .catch(err => {
+              console.log('Piko Market SW registration failed: ', err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
