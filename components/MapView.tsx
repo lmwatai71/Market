@@ -18,7 +18,7 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<any>(null);
-  const [markers, setMarkers] = useState<any[]>([]);
+  const markersRef = useRef<any[]>([]); // Use ref for markers to manage lifecycle without re-renders
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,10 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
 
   useEffect(() => {
     if (!window.google || !mapRef.current) {
-      setError("Google Maps API is not loaded. Please check your API Key in index.html");
+      // Check if the script is actually loaded or if we just missed the window
+      if (!window.google) {
+        setError("Google Maps API is not loaded. Please check your API Key in index.html");
+      }
       return;
     }
 
@@ -64,9 +67,9 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
   useEffect(() => {
     if (!mapInstance || !window.google) return;
 
-    // Clear existing markers
-    markers.forEach(marker => marker.setMap(null));
-    const newMarkers: any[] = [];
+    // Clear existing markers using the ref
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
 
     listings.forEach(listing => {
       // Find coordinates based on location string
@@ -89,11 +92,9 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
           mapInstance.panTo(marker.getPosition());
         });
 
-        newMarkers.push(marker);
+        markersRef.current.push(marker);
       }
     });
-
-    setMarkers(newMarkers);
   }, [mapInstance, listings]);
 
   const handleLocateUser = () => {
