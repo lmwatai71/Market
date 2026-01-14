@@ -140,7 +140,7 @@ const PhoneVerification: React.FC<PhoneVerificationProps> = ({ onVerified, onCan
       </div>
       <div className="bg-mist/10 p-3 text-center border-t border-mist">
         <p className="text-[10px] text-lava/50">
-          Piko Market uses secure SMS verification to prevent scams. Your number is never shared.
+          PIKO MARKETPLACE uses secure SMS verification to prevent scams. Your number is never shared.
         </p>
       </div>
     </div>

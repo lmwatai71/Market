@@ -72,4 +72,4 @@ export interface MessageDraft {
   };
 }
 
-export type ViewState = 'home' | 'browse' | 'chat' | 'profile' | 'map' | 'tools';
+export type ViewState = 'home' | 'browse' | 'chat' | 'profile' | 'map' | 'tools' | 'create';

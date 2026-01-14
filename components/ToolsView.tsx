@@ -1,15 +1,18 @@
-import React from 'react';
-import { PlusCircle, BarChart3, Zap, Store, Shield, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { PlusCircle, BarChart3, Zap, Store, Shield, ChevronRight, MessageSquare, Edit3, X } from 'lucide-react';
 import { Listing } from '../types';
 
 interface ToolsViewProps {
-  onCreateClick: () => void;
+  onAiCreate: () => void;
+  onManualCreate: () => void;
   activeListingsCount: number;
 }
 
-const ToolsView: React.FC<ToolsViewProps> = ({ onCreateClick, activeListingsCount }) => {
+const ToolsView: React.FC<ToolsViewProps> = ({ onAiCreate, onManualCreate, activeListingsCount }) => {
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+
   return (
-    <div className="p-4 pb-24 max-w-2xl mx-auto space-y-6">
+    <div className="p-4 pb-24 max-w-2xl mx-auto space-y-6 relative">
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-2xl font-serif font-bold text-koa">Seller Tools</h2>
         <div className="bg-kai/10 text-kai text-xs font-bold px-2 py-1 rounded-full">
@@ -19,7 +22,7 @@ const ToolsView: React.FC<ToolsViewProps> = ({ onCreateClick, activeListingsCoun
 
       {/* Primary Action */}
       <button 
-        onClick={onCreateClick}
+        onClick={() => setShowCreateMenu(true)}
         className="w-full bg-gradient-to-r from-kai to-lau text-white p-4 rounded-2xl shadow-lg flex items-center justify-between group hover:shadow-xl transition-all"
       >
         <div className="flex items-center gap-4">
@@ -96,6 +99,62 @@ const ToolsView: React.FC<ToolsViewProps> = ({ onCreateClick, activeListingsCoun
            Enable Service Mode
          </button>
       </div>
+
+      {/* Selection Overlay */}
+      {showCreateMenu && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+           <div 
+             className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200"
+             onClick={(e) => e.stopPropagation()}
+           >
+              <button 
+                onClick={() => setShowCreateMenu(false)}
+                className="absolute top-4 right-4 text-lava/40 hover:text-lava transition"
+              >
+                <X size={24} />
+              </button>
+              
+              <h3 className="text-xl font-serif font-bold text-lava mb-2">Create New Listing</h3>
+              <p className="text-lava/60 text-sm mb-6">How would you like to set up your item?</p>
+
+              <div className="space-y-3">
+                 <button 
+                   onClick={() => { setShowCreateMenu(false); onAiCreate(); }}
+                   className="w-full flex items-center gap-4 p-4 rounded-xl border border-kai/20 bg-kai/5 hover:bg-kai/10 hover:border-kai/40 transition group text-left"
+                 >
+                    <div className="bg-kai text-white p-3 rounded-full shrink-0 group-hover:scale-110 transition">
+                      <MessageSquare size={24} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-kai">Use AI Assistant</p>
+                      <p className="text-xs text-lava/70">Upload a photo and let AI write the details.</p>
+                    </div>
+                 </button>
+
+                 <div className="flex items-center gap-4 px-2">
+                    <div className="h-px bg-mist flex-1"></div>
+                    <span className="text-xs font-bold text-lava/30 uppercase">Or</span>
+                    <div className="h-px bg-mist flex-1"></div>
+                 </div>
+
+                 <button 
+                   onClick={() => { setShowCreateMenu(false); onManualCreate(); }}
+                   className="w-full flex items-center gap-4 p-4 rounded-xl border border-mist hover:border-lava/30 hover:bg-mist/10 transition group text-left"
+                 >
+                    <div className="bg-white border border-mist p-3 rounded-full shrink-0 text-lava group-hover:scale-110 transition">
+                      <Edit3 size={24} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-lava">Manual Form</p>
+                      <p className="text-xs text-lava/70">Fill out the details yourself.</p>
+                    </div>
+                 </button>
+              </div>
+           </div>
+           {/* Click backdrop to close */}
+           <div className="absolute inset-0 -z-10" onClick={() => setShowCreateMenu(false)}></div>
+        </div>
+      )}
 
     </div>
   );

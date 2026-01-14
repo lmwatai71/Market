@@ -8,6 +8,7 @@ import AuthView from './components/AuthView';
 import ProfileView from './components/ProfileView';
 import MapView from './components/MapView';
 import ToolsView from './components/ToolsView';
+import CreateListingForm from './components/CreateListingForm';
 import { MOCK_LISTINGS } from './constants';
 import { Listing, ViewState, SearchFilters, User, ChatMessage } from './types';
 
@@ -30,7 +31,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'model',
-      text: "Aloha! 🌺 Welcome to Piko Market, Hawaiʻi Island's local marketplace. I can help you find items, create a listing in your district, or draft a message. Note: We are currently exclusive to the Big Island.",
+      text: "Aloha! 🌺 Welcome to PIKO MARKETPLACE, Hawaiʻi Island's local marketplace. I can help you find items, create a listing in your district, or draft a message. Note: We are currently exclusive to the Big Island.",
       timestamp: new Date()
     }
   ]);
@@ -146,9 +147,9 @@ const App: React.FC = () => {
 
       <button 
         onClick={() => setCurrentView('tools')}
-        className={`flex flex-col items-center gap-1 p-2 w-16 ${currentView === 'tools' ? 'text-kai' : 'text-lava/60'}`}
+        className={`flex flex-col items-center gap-1 p-2 w-16 ${currentView === 'tools' || currentView === 'create' ? 'text-kai' : 'text-lava/60'}`}
       >
-        <Briefcase size={24} strokeWidth={currentView === 'tools' ? 2.5 : 2} />
+        <Briefcase size={24} strokeWidth={currentView === 'tools' || currentView === 'create' ? 2.5 : 2} />
         <span className="text-[10px] font-medium">Tools</span>
       </button>
 
@@ -259,12 +260,16 @@ const App: React.FC = () => {
 
         {currentView === 'tools' && (
           <ToolsView 
-            onCreateClick={() => {
-              // Switch to chat for creation flow or open a form
-              setCurrentView('chat');
-              // Optionally trigger a specific start message in chat
-            }}
+            onAiCreate={() => setCurrentView('chat')}
+            onManualCreate={() => setCurrentView('create')}
             activeListingsCount={listings.filter(l => l.sellerId === currentUser.id).length}
+          />
+        )}
+        
+        {currentView === 'create' && (
+          <CreateListingForm 
+             onCancel={() => setCurrentView('tools')}
+             onSubmit={handleCreateAction}
           />
         )}
 

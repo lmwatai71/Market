@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { MapPin, Star, Zap, Flag, Handshake } from 'lucide-react';
+import { MapPin, Star, Zap, Flag, Handshake, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Listing } from '../types';
+import { submitReport } from '../services/reportService';
 
 interface ListingCardProps {
   listing: Listing;
@@ -13,6 +14,12 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick, isOwner, on
   const [showConfirm, setShowConfirm] = useState(false);
   const [showOffer, setShowOffer] = useState(false);
   const [offerAmount, setOfferAmount] = useState('');
+  
+  // Report State
+  const [showReport, setShowReport] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [isReporting, setIsReporting] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
   
   const isBoosted = listing.boostedUntil && new Date(listing.boostedUntil) > new Date();
 
@@ -32,9 +39,36 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick, isOwner, on
     setShowConfirm(false);
   };
 
-  const handleReport = (e: React.MouseEvent) => {
+  const handleReportClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    alert("Thanks for reporting. Our team will review this listing shortly.");
+    setShowReport(true);
+    setReportReason('');
+    setReportSuccess(false);
+  };
+
+  const submitListingReport = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!reportReason.trim()) return;
+
+    setIsReporting(true);
+    try {
+      await submitReport(listing.id, listing.title, reportReason);
+      setReportSuccess(true);
+      // Close modal after a brief success message
+      setTimeout(() => {
+        setShowReport(false);
+        setIsReporting(false);
+        setReportSuccess(false);
+      }, 1500);
+    } catch (error) {
+      alert("Failed to send report. Please try again.");
+      setIsReporting(false);
+    }
+  };
+
+  const cancelReport = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowReport(false);
   };
 
   const handleMakeOfferClick = (e: React.MouseEvent) => {
@@ -140,8 +174,62 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick, isOwner, on
         </div>
       )}
 
+      {/* Report Listing Overlay */}
+      {showReport && (
+        <div 
+          className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4 text-center cursor-default animate-in fade-in duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+           <div className="bg-white rounded-xl p-4 w-full shadow-2xl animate-in zoom-in-95 duration-200">
+              {reportSuccess ? (
+                <div className="py-8 flex flex-col items-center">
+                  <CheckCircle size={48} className="text-green-500 mb-2" />
+                  <p className="font-bold text-lava">Report Submitted</p>
+                  <p className="text-xs text-lava/60">Thank you for keeping our community safe.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-alaea/10 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-alaea">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <h4 className="font-bold text-lava mb-1">Report Listing</h4>
+                  <p className="text-xs text-lava/70 mb-4">
+                    Why are you reporting this item?
+                  </p>
+                  
+                  <textarea
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full p-3 border border-mist rounded-lg focus:border-alaea outline-none text-sm text-lava mb-4 resize-none h-24"
+                    placeholder="e.g., Prohibited item, scam, duplicate..."
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
+
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={cancelReport}
+                      disabled={isReporting}
+                      className="flex-1 py-2 text-xs font-bold text-lava/60 bg-mist/30 rounded-lg hover:bg-mist/50 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={submitListingReport}
+                      disabled={!reportReason.trim() || isReporting}
+                      className="flex-1 py-2 text-xs font-bold text-white bg-alaea rounded-lg shadow-md hover:bg-alaea/90 transition disabled:opacity-50 flex items-center justify-center"
+                    >
+                      {isReporting ? 'Sending...' : 'Submit Report'}
+                    </button>
+                  </div>
+                </>
+              )}
+           </div>
+        </div>
+      )}
+
       {/* Owner Boost Button */}
-      {isOwner && onBoost && !showConfirm && !showOffer && (
+      {isOwner && onBoost && !showConfirm && !showOffer && !showReport && (
          <button
            onClick={handleBoostClick}
            className="absolute top-3 right-3 bg-white/90 backdrop-blur text-lava p-2 rounded-full shadow-md hover:text-orange-500 transition z-10 active:scale-95 border border-mist/50"
@@ -152,9 +240,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick, isOwner, on
       )}
 
       {/* Report Button (Visible on Hover for non-owners) */}
-      {!isOwner && !showConfirm && !showOffer && (
+      {!isOwner && !showConfirm && !showOffer && !showReport && (
          <button
-           onClick={handleReport}
+           onClick={handleReportClick}
            className="absolute top-3 right-3 bg-white/80 backdrop-blur text-lava/40 hover:text-alaea p-2 rounded-full shadow-sm z-10 opacity-0 group-hover/card:opacity-100 transition-opacity"
            title="Report Listing"
          >

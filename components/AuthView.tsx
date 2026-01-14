@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User as UserType } from '../types';
-import { MOCK_USER, APP_NAME, APPROVED_LOCATIONS } from '../constants';
-import { Mail, Lock, User, MapPin, ArrowRight, ShieldCheck } from 'lucide-react';
+import { MOCK_USER, APP_NAME, APPROVED_LOCATIONS, findNearestLocation } from '../constants';
+import { Mail, Lock, User, MapPin, ArrowRight, ShieldCheck, Crosshair } from 'lucide-react';
 import PhoneVerification from './PhoneVerification';
 
 interface AuthViewProps {
@@ -21,6 +21,35 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
   const [loadingText, setLoadingText] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [pendingUser, setPendingUser] = useState<UserType | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const nearest = findNearestLocation(latitude, longitude);
+        if (nearest) {
+          setFormData(prev => ({ ...prev, location: nearest }));
+          setError(''); // Clear any previous errors
+        } else {
+          setError("You seem to be outside our service area (Hawaiʻi Island).");
+        }
+        setIsLocating(false);
+      },
+      (err) => {
+        console.error(err);
+        setError("Unable to retrieve your location. Please select manually.");
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 5000 }
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,10 +162,10 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                     required={!isLogin}
                   />
                 </div>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 text-lava/40" size={20} />
+                <div className="relative flex items-center">
+                  <MapPin className="absolute left-3 top-3 text-lava/40 z-10" size={20} />
                   <select
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-mist focus:border-kai focus:ring-2 focus:ring-kai/20 outline-none transition text-lava bg-white appearance-none"
+                    className="w-full pl-10 pr-12 py-3 rounded-xl border border-mist focus:border-kai focus:ring-2 focus:ring-kai/20 outline-none transition text-lava bg-white appearance-none"
                     value={formData.location}
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
                     required={!isLogin}
@@ -146,12 +175,20 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                       <option key={loc} value={loc}>{loc}</option>
                     ))}
                   </select>
-                  <div className="absolute right-3 top-3 pointer-events-none">
-                     <svg className="w-5 h-5 text-lava/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
+                  
+                  {/* Geolocation Button */}
+                  <button
+                    type="button"
+                    onClick={detectLocation}
+                    disabled={isLocating}
+                    className="absolute right-2 p-2 text-kai hover:bg-kai/10 rounded-lg transition"
+                    title="Detect my location"
+                  >
+                    <Crosshair size={20} className={isLocating ? "animate-spin" : ""} />
+                  </button>
                 </div>
                 <div className="text-[10px] text-lava/60 px-1">
-                  * Piko Market is currently available only on Hawaiʻi Island.
+                  * PIKO MARKETPLACE is currently available only on Hawaiʻi Island.
                 </div>
               </>
             )}

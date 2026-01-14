@@ -1,17 +1,23 @@
 import { Listing, User } from './types';
 
-export const APP_NAME = "Hawaiʻi Marketplace";
+export const APP_NAME = "PIKO MARKETPLACE";
 
 export const CATEGORIES = [
-  "Vehicles",
-  "Tools",
-  "Furniture",
+  "Appliances",
+  "Auto Parts",
+  "Clothing & Accessories",
   "Electronics",
-  "Rentals",
-  "Plants & Farm Goods",
-  "Services",
   "Free Stuff",
-  "Local Crafts"
+  "Furniture",
+  "Local Crafts",
+  "Miscellaneous",
+  "Plants & Farm Goods",
+  "Real Estate",
+  "Rentals",
+  "Services",
+  "Sporting Goods",
+  "Tools",
+  "Vehicles"
 ];
 
 export const APPROVED_LOCATIONS = [
@@ -23,6 +29,54 @@ export const APPROVED_LOCATIONS = [
   "Captain Cook", "Kealakekua", "Holualoa", "Kailua‑Kona", 
   "Waikoloa", "Waimea", "Honokaʻa", "Laupāhoehoe", "Hawi", "Kapaʻau"
 ].sort();
+
+// Approximate coordinates for approved locations
+export const LOCATION_COORDINATES: Record<string, { lat: number, lng: number }> = {
+  "Hilo": { lat: 19.7241, lng: -155.0868 },
+  "Puna": { lat: 19.5000, lng: -154.9500 }, 
+  "Kaʻū": { lat: 19.1000, lng: -155.6000 }, 
+  "South Kona": { lat: 19.3000, lng: -155.9000 },
+  "North Kona": { lat: 19.7000, lng: -155.9900 },
+  "South Kohala": { lat: 19.9500, lng: -155.7500 },
+  "North Kohala": { lat: 20.2000, lng: -155.8000 },
+  "Hāmākua": { lat: 20.1000, lng: -155.4000 },
+  "Keaʻau": { lat: 19.6217, lng: -155.0406 },
+  "Pāhoa": { lat: 19.5000, lng: -154.9500 },
+  "Volcano": { lat: 19.4318, lng: -155.2346 },
+  "Mountain View": { lat: 19.5500, lng: -155.1167 },
+  "Kurtistown": { lat: 19.5933, lng: -155.0606 },
+  "Pahala": { lat: 19.2008, lng: -155.4772 },
+  "Naʻalehu": { lat: 19.0644, lng: -155.5861 },
+  "Ocean View": { lat: 19.1000, lng: -155.7667 },
+  "Captain Cook": { lat: 19.4956, lng: -155.9172 },
+  "Kealakekua": { lat: 19.5250, lng: -155.9250 },
+  "Holualoa": { lat: 19.6208, lng: -155.9731 },
+  "Kailua‑Kona": { lat: 19.6406, lng: -155.9969 },
+  "Waikoloa": { lat: 19.9367, lng: -155.7920 },
+  "Waimea": { lat: 20.0203, lng: -155.6650 },
+  "Honokaʻa": { lat: 20.0783, lng: -155.4650 },
+  "Laupāhoehoe": { lat: 19.9833, lng: -155.2333 },
+  "Hawi": { lat: 20.2375, lng: -155.8322 },
+  "Kapaʻau": { lat: 20.2333, lng: -155.7983 }
+};
+
+export const findNearestLocation = (lat: number, lng: number): string | null => {
+  let nearest = null;
+  let minDistance = Infinity;
+
+  for (const [name, coords] of Object.entries(LOCATION_COORDINATES)) {
+    // Simple Euclidean distance is sufficient for local selection
+    const dist = Math.sqrt(Math.pow(lat - coords.lat, 2) + Math.pow(lng - coords.lng, 2));
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearest = name;
+    }
+  }
+
+  // Threshold: If closest is > ~0.5 degrees away (approx 35 miles), might be off-island or too far
+  if (minDistance > 0.5) return null;
+  return nearest;
+};
 
 export const MOCK_USER: User = {
   id: 'u1',
@@ -108,11 +162,11 @@ export const MOCK_LISTINGS: Listing[] = [
 ];
 
 export const SYSTEM_INSTRUCTION = `
-You are the security-aware AI assistant for Piko Market, a Hawaiʻi-based local marketplace app.
+You are the security-aware AI assistant for PIKO MARKETPLACE, a Hawaiʻi-based local marketplace app.
 Your role is to help users buy, sell, trade, and discover items, while STRICTLY protecting them from scams and fake accounts.
 
 LOCATION RULE (CORE):
-Piko Market currently operates ONLY on Hawaiʻi Island (Big Island).
+PIKO MARKETPLACE currently operates ONLY on Hawaiʻi Island (Big Island).
 All users, listings, businesses, and service providers must be located within Hawaiʻi Island districts or towns.
 Approved locations include: Hilo, Puna, Kaʻū, Kona (North/South), Kohala (North/South), Hāmākua, Waimea, Volcano, Pāhoa, etc.
 
@@ -142,6 +196,7 @@ Verification Flow:
 MARKETPLACE RESPONSIBILITIES:
 1. Help users create listings by asking for missing details (title, price, category, condition, location).
    - Ensure the location is one of the approved Hawaiʻi Island towns.
+   - Suggest one of the official categories: Appliances, Auto Parts, Clothing & Accessories, Electronics, Free Stuff, Furniture, Local Crafts, Miscellaneous, Plants & Farm Goods, Real Estate, Rentals, Services, Sporting Goods, Tools, Vehicles.
 2. Help users browse listings by category, price, or location.
 3. Help users draft friendly, safe messages.
 4. Support local culture (use respectful Hawaiʻi-aware language).
@@ -162,7 +217,7 @@ Scenario 1: Creating a listing.
 {
   "title": "String",
   "price": "String or Number",
-  "category": "String",
+  "category": "String (One of: Appliances, Auto Parts, Clothing & Accessories, Electronics, Free Stuff, Furniture, Local Crafts, Miscellaneous, Plants & Farm Goods, Real Estate, Rentals, Services, Sporting Goods, Tools, Vehicles)",
   "description": "String",
   "photos": ["Array of Strings"],
   "location": "String (Must be a Hawaiʻi Island town)",

@@ -1,86 +1,203 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Listing } from '../types';
-import { MapPin, X, ArrowRight } from 'lucide-react';
+import { LOCATION_COORDINATES } from '../constants';
+import { MapPin, X, ArrowRight, Navigation, Loader2 } from 'lucide-react';
 
 interface MapViewProps {
   listings: Listing[];
   onListingClick: (listing: Listing) => void;
 }
 
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [mapInstance, setMapInstance] = useState<any>(null);
+  const [markers, setMarkers] = useState<any[]>([]);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simple mock map visualization
-  // In a real app, this would use Google Maps or Mapbox
+  // Center of Big Island
+  const DEFAULT_CENTER = { lat: 19.6500, lng: -155.5000 };
+  const DEFAULT_ZOOM = 9;
+
+  useEffect(() => {
+    if (!window.google || !mapRef.current) {
+      setError("Google Maps API is not loaded. Please check your API Key in index.html");
+      return;
+    }
+
+    if (!mapInstance) {
+      const map = new window.google.maps.Map(mapRef.current, {
+        center: DEFAULT_CENTER,
+        zoom: DEFAULT_ZOOM,
+        styles: [
+            {
+                "featureType": "poi",
+                "elementType": "labels",
+                "stylers": [{ "visibility": "off" }]
+            }
+        ],
+        disableDefaultUI: false,
+        zoomControl: false,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+      });
+
+      setMapInstance(map);
+
+      // Add click listener to close selection
+      map.addListener('click', () => {
+        setSelectedListing(null);
+      });
+    }
+  }, [mapRef.current]);
+
+  // Handle Markers
+  useEffect(() => {
+    if (!mapInstance || !window.google) return;
+
+    // Clear existing markers
+    markers.forEach(marker => marker.setMap(null));
+    const newMarkers: any[] = [];
+
+    listings.forEach(listing => {
+      // Find coordinates based on location string
+      const coords = LOCATION_COORDINATES[listing.location];
+      
+      if (coords) {
+        // Add some random jitter so markers in same town don't perfectly overlap
+        const jitterLat = (Math.random() - 0.5) * 0.005;
+        const jitterLng = (Math.random() - 0.5) * 0.005;
+
+        const marker = new window.google.maps.Marker({
+          position: { lat: coords.lat + jitterLat, lng: coords.lng + jitterLng },
+          map: mapInstance,
+          title: listing.title,
+          animation: window.google.maps.Animation.DROP,
+        });
+
+        marker.addListener('click', () => {
+          setSelectedListing(listing);
+          mapInstance.panTo(marker.getPosition());
+        });
+
+        newMarkers.push(marker);
+      }
+    });
+
+    setMarkers(newMarkers);
+  }, [mapInstance, listings]);
+
+  const handleLocateUser = () => {
+    if (!mapInstance || !navigator.geolocation) return;
+    
+    setIsLoadingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const pos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+
+        setUserLocation(pos);
+        mapInstance.setCenter(pos);
+        mapInstance.setZoom(12);
+        
+        // Add User Marker
+        new window.google.maps.Marker({
+            position: pos,
+            map: mapInstance,
+            icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: "#4285F4",
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "white",
+            },
+            title: "You are here"
+        });
+
+        setIsLoadingLocation(false);
+      },
+      (err) => {
+        console.error("Error getting location", err);
+        alert("Could not access your location.");
+        setIsLoadingLocation(false);
+      }
+    );
+  };
+
   return (
-    <div className="relative w-full h-[calc(100vh-140px)] bg-blue-50 overflow-hidden">
-      {/* Mock Map Background - Stylized representation of Oahu/Islands */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <svg viewBox="0 0 100 100" className="w-full h-full text-green-700 fill-current">
-          {/* Abstract Island Shapes */}
-          <path d="M20,20 Q30,10 40,25 T60,50 T40,80 T15,60 T20,20" />
-          <path d="M70,70 Q80,60 90,75 T95,90 T75,95 T65,85 T70,70" />
-        </svg>
+    <div className="relative w-full h-[calc(100vh-140px)] bg-mist/20">
+      
+      {/* Map Container */}
+      <div ref={mapRef} className="w-full h-full" />
+      
+      {/* Error Message if API missing */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-mist/50 backdrop-blur-sm z-10 p-6 text-center">
+            <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm">
+                <p className="text-alaea font-bold mb-2">Map Error</p>
+                <p className="text-sm text-lava/70">{error}</p>
+            </div>
+        </div>
+      )}
+
+      {/* Floating Controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-3 z-10">
+        <button 
+          onClick={handleLocateUser}
+          className="bg-white p-3 rounded-xl shadow-lg text-lava/80 hover:text-kai hover:bg-white active:scale-95 transition flex items-center justify-center"
+          title="My Location"
+        >
+          {isLoadingLocation ? <Loader2 size={20} className="animate-spin" /> : <Navigation size={20} />}
+        </button>
       </div>
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-
-      {/* Pins */}
-      {listings.map((listing) => {
-        // Use coordinates if available, otherwise random fallback for demo
-        const left = listing.coordinates ? `${listing.coordinates.x}%` : `${Math.random() * 80 + 10}%`;
-        const top = listing.coordinates ? `${listing.coordinates.y}%` : `${Math.random() * 80 + 10}%`;
-
-        return (
-          <div
-            key={listing.id}
-            className="absolute transform -translate-x-1/2 -translate-y-full cursor-pointer group transition-all duration-300 hover:scale-110 z-10"
-            style={{ left, top }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedListing(listing);
-            }}
-          >
-            <div className={`p-2 rounded-full shadow-lg border-2 border-white transition-colors ${selectedListing?.id === listing.id ? 'bg-kai text-white scale-125' : 'bg-white text-kai hover:bg-kai hover:text-white'}`}>
-              <MapPin size={24} fill="currentColor" />
-            </div>
-            {/* Price Tag Label */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-1 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-xs font-bold text-lava shadow-sm whitespace-nowrap hidden group-hover:block">
-              ${listing.price}
-            </div>
-          </div>
-        );
-      })}
 
       {/* Selected Listing Card */}
       {selectedListing && (
-        <div className="absolute bottom-6 left-4 right-4 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
-          <div className="bg-white rounded-2xl p-4 shadow-xl border border-mist flex gap-4 relative">
+        <div className="absolute bottom-6 left-4 right-4 z-20 animate-in slide-in-from-bottom-10 fade-in duration-300">
+          <div className="bg-white rounded-2xl p-4 shadow-2xl border border-mist flex gap-4 relative max-w-lg mx-auto">
             <button 
               onClick={() => setSelectedListing(null)}
-              className="absolute -top-2 -right-2 bg-lava text-white rounded-full p-1 shadow-md hover:scale-110 transition"
+              className="absolute -top-3 -right-3 bg-white text-lava border border-mist rounded-full p-1.5 shadow-md hover:scale-110 transition z-30"
             >
               <X size={16} />
             </button>
             
             <div className="w-24 h-24 rounded-xl overflow-hidden shrink-0 bg-mist">
-              <img 
-                src={selectedListing.photos[0]} 
-                alt={selectedListing.title} 
-                className="w-full h-full object-cover"
-              />
+              {selectedListing.photos.length > 0 ? (
+                <img 
+                  src={selectedListing.photos[0]} 
+                  alt={selectedListing.title} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs text-lava/40">No Image</div>
+              )}
             </div>
             
-            <div className="flex-1 flex flex-col justify-center">
+            <div className="flex-1 flex flex-col justify-center min-w-0">
               <h3 className="font-bold text-lava line-clamp-1">{selectedListing.title}</h3>
-              <p className="text-kai font-bold text-lg">${selectedListing.price}</p>
-              <div className="flex items-center text-lava/60 text-xs mt-1">
+              <p className="text-kai font-bold text-lg">${selectedListing.price.toLocaleString()}</p>
+              <div className="flex items-center text-lava/60 text-xs mt-1 mb-2">
                 <MapPin size={12} className="mr-1" />
                 {selectedListing.location}
               </div>
               
               <button 
                 onClick={() => onListingClick(selectedListing)}
-                className="mt-2 self-start flex items-center text-sm font-medium text-white bg-kai px-3 py-1.5 rounded-lg hover:bg-kai/90 transition"
+                className="self-start flex items-center text-sm font-medium text-white bg-kai px-4 py-2 rounded-lg hover:bg-kai/90 transition shadow-sm"
               >
                 View Details <ArrowRight size={14} className="ml-1" />
               </button>
@@ -88,13 +205,6 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
           </div>
         </div>
       )}
-
-      {/* Map Controls (Visual only) */}
-      <div className="absolute top-4 right-4 flex flex-col gap-2">
-         <div className="bg-white/90 backdrop-blur p-2 rounded-lg shadow-md text-lava/70 hover:text-kai cursor-pointer">
-           <MapPin size={20} />
-         </div>
-      </div>
     </div>
   );
 };

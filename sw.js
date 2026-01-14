@@ -1,4 +1,4 @@
-const CACHE_NAME = 'piko-market-v1';
+const CACHE_NAME = 'piko-marketplace-v1';
 const PRECACHE_URLS = [
   '/',
   '/index.html'

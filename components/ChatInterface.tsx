@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Sparkles, Image as ImageIcon, MapPin, X, Camera, AlertTriangle, ExternalLink } from 'lucide-react';
 import { ChatMessage, ListingDraft, SearchFilters, MessageDraft, Listing } from '../types';
 import { sendMessageToGemini, extractJsonFromResponse } from '../services/geminiService';
+import { findNearestLocation } from '../constants';
 import CameraCapture from './CameraCapture';
 
 interface ChatInterfaceProps {
@@ -22,6 +23,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   const [selectedImage, setSelectedImage] = useState<{ data: string; mimeType: string; preview: string } | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -61,6 +63,36 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       preview: dataUrl
     });
     setIsCameraOpen(false);
+  };
+
+  const handleShareLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const nearest = findNearestLocation(latitude, longitude);
+        if (nearest) {
+          setInput(prev => {
+             const prefix = prev ? prev + " " : "";
+             return prefix + `I am located in ${nearest}.`;
+          });
+        } else {
+          alert("Could not determine a nearby marketplace location.");
+        }
+        setIsLocating(false);
+      },
+      (err) => {
+        console.error(err);
+        alert("Unable to retrieve location.");
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 5000 }
+    );
   };
 
   const handleSend = async () => {
@@ -292,6 +324,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             )}
           </button>
           
+          <button
+            onClick={handleShareLocation}
+            disabled={isLocating}
+            className={`p-2 text-lava/60 hover:text-kai hover:bg-mist/30 rounded-xl transition ${isLocating ? 'animate-pulse text-kai' : ''}`}
+            title="Share My Location"
+          >
+            <MapPin size={20} />
+          </button>
+
           <input 
             type="file" 
             ref={fileInputRef} 
