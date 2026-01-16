@@ -101,6 +101,7 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: 'Good',
     sellerId: 'u2',
     sellerName: 'Uncle Bob',
+    sellerPhone: '808-555-0102',
     sellerRating: 4.9,
     createdAt: '2023-10-25',
     boostedUntil: '2023-11-01',
@@ -119,6 +120,7 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: 'New',
     sellerId: 'u3',
     sellerName: 'Lani',
+    sellerPhone: '808-555-0103',
     sellerRating: 5.0,
     createdAt: '2023-10-26',
     coordinates: { x: 20, y: 50 }, // Kona side
@@ -136,6 +138,7 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: 'Excellent',
     sellerId: 'u4',
     sellerName: 'Keoni',
+    sellerPhone: '808-555-0104',
     sellerRating: 4.7,
     createdAt: '2023-10-20',
     coordinates: { x: 30, y: 80 }, // South
@@ -153,6 +156,7 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: 'Fair',
     sellerId: 'u5',
     sellerName: 'Sarah',
+    sellerPhone: '808-555-0105',
     sellerRating: 4.5,
     createdAt: '2023-10-27',
     coordinates: { x: 40, y: 20 }, // North

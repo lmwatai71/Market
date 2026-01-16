@@ -9,6 +9,7 @@ export interface Listing {
   condition: string;
   sellerId: string;
   sellerName: string;
+  sellerPhone?: string; // Added for SMS functionality
   sellerRating: number;
   createdAt: string;
   boostedUntil?: string;

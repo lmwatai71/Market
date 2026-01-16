@@ -10,16 +10,15 @@ interface MapViewProps {
 
 declare global {
   interface Window {
-    google: any;
+    L: any;
   }
 }
 
 const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapInstance, setMapInstance] = useState<any>(null);
-  const markersRef = useRef<any[]>([]); // Use ref for markers to manage lifecycle without re-renders
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]); 
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,105 +27,113 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
   const DEFAULT_ZOOM = 9;
 
   useEffect(() => {
-    if (!window.google || !mapRef.current) {
-      // Check if the script is actually loaded or if we just missed the window
-      if (!window.google) {
-        setError("Google Maps API is not loaded. Please check your API Key in index.html");
+    if (!window.L || !mapRef.current) {
+      if (!window.L) {
+        setError("Leaflet Map library is not loaded.");
       }
       return;
     }
 
-    if (!mapInstance) {
-      const map = new window.google.maps.Map(mapRef.current, {
-        center: DEFAULT_CENTER,
+    if (!mapInstanceRef.current) {
+      // Initialize Leaflet Map
+      const map = window.L.map(mapRef.current, {
+        center: [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng],
         zoom: DEFAULT_ZOOM,
-        styles: [
-            {
-                "featureType": "poi",
-                "elementType": "labels",
-                "stylers": [{ "visibility": "off" }]
-            }
-        ],
-        disableDefaultUI: false,
         zoomControl: false,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
+        attributionControl: false
       });
 
-      setMapInstance(map);
+      // Add OpenStreetMap Tile Layer
+      window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }).addTo(map);
 
-      // Add click listener to close selection
-      map.addListener('click', () => {
+      mapInstanceRef.current = map;
+
+      // Close selection on map click
+      map.on('click', () => {
         setSelectedListing(null);
       });
     }
-  }, [mapRef.current]);
+
+    return () => {
+      // Cleanup handled by refs
+    };
+  }, []);
 
   // Handle Markers
   useEffect(() => {
-    if (!mapInstance || !window.google) return;
+    if (!mapInstanceRef.current || !window.L) return;
 
-    // Clear existing markers using the ref
-    markersRef.current.forEach(marker => marker.setMap(null));
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
+    // Define Custom Icon
+    const customIcon = window.L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="background-color: #2A6F97; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [12, 12],
+      iconAnchor: [6, 6]
+    });
+
+    const activeIcon = window.L.divIcon({
+      className: 'active-div-icon',
+      html: `<div style="background-color: #C75B39; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
+
     listings.forEach(listing => {
-      // Find coordinates based on location string
       const coords = LOCATION_COORDINATES[listing.location];
       
       if (coords) {
-        // Add some random jitter so markers in same town don't perfectly overlap
+        // Jitter
         const jitterLat = (Math.random() - 0.5) * 0.005;
         const jitterLng = (Math.random() - 0.5) * 0.005;
 
-        const marker = new window.google.maps.Marker({
-          position: { lat: coords.lat + jitterLat, lng: coords.lng + jitterLng },
-          map: mapInstance,
-          title: listing.title,
-          animation: window.google.maps.Animation.DROP,
-        });
+        const marker = window.L.marker([coords.lat + jitterLat, coords.lng + jitterLng], {
+          icon: customIcon
+        }).addTo(mapInstanceRef.current);
 
-        marker.addListener('click', () => {
-          setSelectedListing(listing);
-          mapInstance.panTo(marker.getPosition());
+        marker.on('click', () => {
+           // Reset all icons
+           markersRef.current.forEach(m => m.setIcon(customIcon));
+           // Set active
+           marker.setIcon(activeIcon);
+           
+           setSelectedListing(listing);
+           mapInstanceRef.current.setView(marker.getLatLng(), 11, { animate: true });
         });
 
         markersRef.current.push(marker);
       }
     });
-  }, [mapInstance, listings]);
+  }, [listings]);
 
   const handleLocateUser = () => {
-    if (!mapInstance || !navigator.geolocation) return;
+    if (!mapInstanceRef.current || !navigator.geolocation) return;
     
     setIsLoadingLocation(true);
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const pos = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
 
-        setUserLocation(pos);
-        mapInstance.setCenter(pos);
-        mapInstance.setZoom(12);
+        mapInstanceRef.current.setView([lat, lng], 12);
         
         // Add User Marker
-        new window.google.maps.Marker({
-            position: pos,
-            map: mapInstance,
-            icon: {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                scale: 10,
-                fillColor: "#4285F4",
-                fillOpacity: 1,
-                strokeWeight: 2,
-                strokeColor: "white",
-            },
-            title: "You are here"
-        });
+        window.L.circleMarker([lat, lng], {
+            radius: 8,
+            fillColor: "#4285F4",
+            color: "#fff",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 1
+        }).addTo(mapInstanceRef.current);
 
         setIsLoadingLocation(false);
       },
@@ -142,9 +149,8 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
     <div className="relative w-full h-[calc(100vh-140px)] bg-mist/20">
       
       {/* Map Container */}
-      <div ref={mapRef} className="w-full h-full" />
+      <div ref={mapRef} className="w-full h-full z-0" />
       
-      {/* Error Message if API missing */}
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-mist/50 backdrop-blur-sm z-10 p-6 text-center">
             <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm">
@@ -155,7 +161,7 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
       )}
 
       {/* Floating Controls */}
-      <div className="absolute top-4 right-4 flex flex-col gap-3 z-10">
+      <div className="absolute top-4 right-4 flex flex-col gap-3 z-[400]">
         <button 
           onClick={handleLocateUser}
           className="bg-white p-3 rounded-xl shadow-lg text-lava/80 hover:text-kai hover:bg-white active:scale-95 transition flex items-center justify-center"
@@ -167,10 +173,22 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
 
       {/* Selected Listing Card */}
       {selectedListing && (
-        <div className="absolute bottom-6 left-4 right-4 z-20 animate-in slide-in-from-bottom-10 fade-in duration-300">
+        <div className="absolute bottom-6 left-4 right-4 z-[500] animate-in slide-in-from-bottom-10 fade-in duration-300">
           <div className="bg-white rounded-2xl p-4 shadow-2xl border border-mist flex gap-4 relative max-w-lg mx-auto">
             <button 
-              onClick={() => setSelectedListing(null)}
+              onClick={() => {
+                setSelectedListing(null);
+                // Reset icons
+                if (window.L) {
+                   const customIcon = window.L.divIcon({
+                      className: 'custom-div-icon',
+                      html: `<div style="background-color: #2A6F97; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                      iconSize: [12, 12],
+                      iconAnchor: [6, 6]
+                   });
+                   markersRef.current.forEach(m => m.setIcon(customIcon));
+                }
+              }}
               className="absolute -top-3 -right-3 bg-white text-lava border border-mist rounded-full p-1.5 shadow-md hover:scale-110 transition z-30"
             >
               <X size={16} />
