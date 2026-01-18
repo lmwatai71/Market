@@ -22,9 +22,10 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Center of Big Island
-  const DEFAULT_CENTER = { lat: 19.6500, lng: -155.5000 };
-  const DEFAULT_ZOOM = 9;
+  // Center of Main Hawaiian Islands
+  // Latitude: ~20.7, Longitude: ~ -157.5 (Between Maui/Molokai and Oahu)
+  const DEFAULT_CENTER = { lat: 20.7984, lng: -157.5000 };
+  const DEFAULT_ZOOM = 7;
 
   useEffect(() => {
     if (!window.L || !mapRef.current) {
@@ -123,7 +124,7 @@ const MapView: React.FC<MapViewProps> = ({ listings, onListingClick }) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        mapInstanceRef.current.setView([lat, lng], 12);
+        mapInstanceRef.current.setView([lat, lng], 10);
         
         // Add User Marker
         window.L.circleMarker([lat, lng], {

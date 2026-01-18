@@ -9,7 +9,8 @@ import ProfileView from './components/ProfileView';
 import MapView from './components/MapView';
 import ToolsView from './components/ToolsView';
 import CreateListingForm from './components/CreateListingForm';
-import { MOCK_LISTINGS } from './constants';
+import ListingDetailsView from './components/ListingDetailsView';
+import { MOCK_LISTINGS, getIslandFromLocation } from './constants';
 import { Listing, ViewState, SearchFilters, User, ChatMessage } from './types';
 
 const App: React.FC = () => {
@@ -17,7 +18,11 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [currentView, setCurrentView] = useState<ViewState>('home');
+  const [previousView, setPreviousView] = useState<ViewState>('home'); // For back navigation
+  
   const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  
   const [activeFilters, setActiveFilters] = useState({
     searchQuery: '',
     category: '',
@@ -31,14 +36,14 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'model',
-      text: "Aloha! 🌺 Welcome to PIKO MARKETPLACE, Hawaiʻi Island's local marketplace. I can help you find items, create a listing in your district, or draft a message. Note: We are currently exclusive to the Big Island.",
+      text: "Aloha! 🌺 Welcome to PIKO MARKETPLACE. I can help you find items, create a listing, or draft a message to a seller. I serve all islands: Hawaiʻi, Oʻahu, Maui, Kauaʻi, Molokaʻi, and Lānaʻi.",
       timestamp: new Date()
     }
   ]);
   
   // Launch System Check
   useEffect(() => {
-    console.log("SYSTEM CHECK: Hawaiʻi Island Configuration Loaded.");
+    console.log("SYSTEM CHECK: Pae ʻĀina Configuration Loaded.");
     console.log("SYSTEM CHECK: Security Protocols Active.");
   }, []);
 
@@ -53,6 +58,14 @@ const App: React.FC = () => {
     setCurrentView('home');
   };
 
+  // Navigation Helper
+  const navigateTo = (view: ViewState) => {
+    if (view !== currentView) {
+        setPreviousView(currentView);
+        setCurrentView(view);
+    }
+  };
+
   // Handle Action from Chat to Browse
   const handleSearchAction = (filters: SearchFilters['data']) => {
     setActiveFilters(prev => ({
@@ -60,7 +73,15 @@ const App: React.FC = () => {
       ...filters.filters,
       searchQuery: filters.searchQuery || ''
     }));
-    setCurrentView('browse');
+    navigateTo('browse');
+  };
+
+  // Handle Category Selection (from Tabs)
+  const handleCategorySelect = (category: string) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      category: category
+    }));
   };
 
   // Handle Action from Chat to Create Listing
@@ -69,6 +90,11 @@ const App: React.FC = () => {
       newListing.sellerId = currentUser.id;
       newListing.sellerName = currentUser.name;
     }
+    // Auto-detect island if missing from AI draft
+    if (!newListing.island && newListing.location) {
+        newListing.island = getIslandFromLocation(newListing.location);
+    }
+
     setListings(prev => [newListing, ...prev]);
     // Reset filters to show everything including new item or specific category
     setActiveFilters({
@@ -78,7 +104,7 @@ const App: React.FC = () => {
       maxPrice: '',
       location: ''
     });
-    setCurrentView('browse');
+    navigateTo('browse');
     alert(`Success! "${newListing.title}" has been posted.`);
   };
 
@@ -93,8 +119,35 @@ const App: React.FC = () => {
       return l;
     });
     setListings(updatedListings);
-    // In a real app, this would trigger payment processing first
     alert(`Success! "${listing.title}" is now boosted for 24 hours.`);
+  };
+
+  const handleListingClick = (listing: Listing) => {
+    setSelectedListing(listing);
+    navigateTo('listing');
+  };
+
+  const handleListingContact = (type: 'sms' | 'chat') => {
+    if (!selectedListing) return;
+
+    if (type === 'sms') {
+       const phone = selectedListing.sellerPhone || '808-555-0100';
+       const body = `Aloha! I'm interested in your listing "${selectedListing.title}" on PIKO. Is it still available?`;
+       window.location.href = `sms:${phone}?body=${encodeURIComponent(body)}`;
+    } else {
+       // Open chat and draft message
+       setChatMessages(prev => [...prev, {
+         id: Date.now().toString(),
+         role: 'model',
+         text: `I've started a draft message to ${selectedListing.sellerName} regarding "${selectedListing.title}".`,
+         actionData: {
+            type: 'MESSAGE_SELLER',
+            data: { messageToSeller: `Aloha! I'm interested in your "${selectedListing.title}". Is it still available?` }
+         },
+         timestamp: new Date()
+       }]);
+       navigateTo('chat');
+    }
   };
 
   const clearFilters = () => {
@@ -116,7 +169,7 @@ const App: React.FC = () => {
   const BottomNav = () => (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-mist h-20 px-4 pb-2 flex justify-between items-center z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
       <button 
-        onClick={() => setCurrentView('home')} 
+        onClick={() => navigateTo('home')} 
         className={`flex flex-col items-center gap-1 p-2 w-16 ${currentView === 'home' ? 'text-kai' : 'text-lava/60'}`}
       >
         <Home size={24} strokeWidth={currentView === 'home' ? 2.5 : 2} />
@@ -124,7 +177,7 @@ const App: React.FC = () => {
       </button>
       
       <button 
-        onClick={() => setCurrentView('map')} 
+        onClick={() => navigateTo('map')} 
         className={`flex flex-col items-center gap-1 p-2 w-16 ${currentView === 'map' ? 'text-kai' : 'text-lava/60'}`}
       >
         <Map size={24} strokeWidth={currentView === 'map' ? 2.5 : 2} />
@@ -134,7 +187,7 @@ const App: React.FC = () => {
       {/* Floating Center Action Button - AI Chat */}
       <div className="relative -top-5">
         <button 
-          onClick={() => setCurrentView('chat')}
+          onClick={() => navigateTo('chat')}
           className={`h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95 ${
             currentView === 'chat' 
               ? 'bg-gradient-to-tr from-kai to-lau text-white ring-4 ring-white' 
@@ -146,7 +199,7 @@ const App: React.FC = () => {
       </div>
 
       <button 
-        onClick={() => setCurrentView('tools')}
+        onClick={() => navigateTo('tools')}
         className={`flex flex-col items-center gap-1 p-2 w-16 ${currentView === 'tools' || currentView === 'create' ? 'text-kai' : 'text-lava/60'}`}
       >
         <Briefcase size={24} strokeWidth={currentView === 'tools' || currentView === 'create' ? 2.5 : 2} />
@@ -154,7 +207,7 @@ const App: React.FC = () => {
       </button>
 
       <button 
-        onClick={() => setCurrentView('profile')}
+        onClick={() => navigateTo('profile')}
         className={`flex flex-col items-center gap-1 p-2 w-16 ${currentView === 'profile' ? 'text-kai' : 'text-lava/60'}`}
       >
         <UserIcon size={24} strokeWidth={currentView === 'profile' ? 2.5 : 2} />
@@ -165,14 +218,20 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cloud text-lava font-sans selection:bg-kai/20">
-      <Header 
-        activeView={currentView} 
-        onMenuClick={() => {}} 
-        onProfileClick={() => setCurrentView('profile')}
-      />
-      <SafetyBanner />
+      
+      {/* Hide Header when in listing view for immersive feel */}
+      {currentView !== 'listing' && (
+        <>
+          <Header 
+            activeView={currentView} 
+            onMenuClick={() => {}} 
+            onProfileClick={() => navigateTo('profile')}
+          />
+          <SafetyBanner />
+        </>
+      )}
 
-      <main className="pb-24"> {/* Padding bottom for Nav */}
+      <main className={currentView === 'listing' ? '' : 'pb-24'}>
         
         {currentView === 'home' && (
           <div className="p-4 space-y-8 max-w-2xl mx-auto">
@@ -183,7 +242,7 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
                <div 
-                 onClick={() => setCurrentView('browse')}
+                 onClick={() => navigateTo('browse')}
                  className="bg-white p-6 rounded-[16px] border border-mist shadow-sm flex flex-col items-center justify-center gap-3 hover:border-kai/50 cursor-pointer transition"
                 >
                   <div className="bg-kai/10 p-3 rounded-full text-kai">
@@ -192,7 +251,7 @@ const App: React.FC = () => {
                   <span className="font-medium">Browse Items</span>
                </div>
                <div 
-                 onClick={() => setCurrentView('map')}
+                 onClick={() => navigateTo('map')}
                  className="bg-white p-6 rounded-[16px] border border-mist shadow-sm flex flex-col items-center justify-center gap-3 hover:border-lau/50 cursor-pointer transition"
                 >
                   <div className="bg-lau/10 p-3 rounded-full text-lau">
@@ -206,10 +265,10 @@ const App: React.FC = () => {
                <div className="relative z-10">
                  <h3 className="font-serif font-bold text-xl mb-2">AI Assistant</h3>
                  <p className="text-white/90 text-sm mb-4 max-w-[80%]">
-                   Need help pricing an item or finding a specific surfboard? Ask the assistant!
+                   Need help pricing an item? Ask the assistant! I can also help you draft messages.
                  </p>
                  <button 
-                   onClick={() => setCurrentView('chat')}
+                   onClick={() => navigateTo('chat')}
                    className="bg-white text-kai font-semibold px-4 py-2 rounded-lg text-sm"
                  >
                    Open Chat
@@ -222,11 +281,11 @@ const App: React.FC = () => {
             <div>
               <div className="flex justify-between items-center mb-4">
                  <h3 className="font-serif font-bold text-lg text-koa">Recent Listings</h3>
-                 <button onClick={() => setCurrentView('browse')} className="text-sm text-kai">View All</button>
+                 <button onClick={() => navigateTo('browse')} className="text-sm text-kai">View All</button>
               </div>
               <div className="grid grid-cols-1 gap-4">
                  {listings.slice(0, 2).map(l => (
-                    <div key={l.id} className="flex bg-white p-3 rounded-[16px] border border-mist shadow-sm gap-3 cursor-pointer" onClick={() => setCurrentView('browse')}>
+                    <div key={l.id} className="flex bg-white p-3 rounded-[16px] border border-mist shadow-sm gap-3 cursor-pointer" onClick={() => handleListingClick(l)}>
                        <img src={l.photos[0]} className="w-24 h-24 object-cover rounded-lg bg-gray-200" alt={l.title} />
                        <div className="flex flex-col justify-center">
                           <h4 className="font-medium text-lava">{l.title}</h4>
@@ -244,31 +303,45 @@ const App: React.FC = () => {
           <BrowseView 
             listings={listings} 
             activeFilters={activeFilters}
-            onListingClick={(l) => console.log('Clicked', l.title)}
+            onListingClick={handleListingClick}
             onClearFilters={clearFilters}
             currentUser={currentUser}
             onBoost={handleBoostListing}
+            onCategorySelect={handleCategorySelect}
           />
+        )}
+
+        {currentView === 'listing' && selectedListing && (
+            <ListingDetailsView 
+                listing={selectedListing}
+                currentUser={currentUser}
+                onBack={() => {
+                    // Go back to previous view (usually browse or home)
+                    if (previousView === 'listing') navigateTo('browse');
+                    else navigateTo(previousView);
+                }}
+                onContact={handleListingContact}
+            />
         )}
 
         {currentView === 'map' && (
           <MapView 
             listings={listings}
-            onListingClick={(l) => console.log('Clicked Map Pin', l.title)}
+            onListingClick={handleListingClick}
           />
         )}
 
         {currentView === 'tools' && (
           <ToolsView 
-            onAiCreate={() => setCurrentView('chat')}
-            onManualCreate={() => setCurrentView('create')}
+            onAiCreate={() => navigateTo('chat')}
+            onManualCreate={() => navigateTo('create')}
             activeListingsCount={listings.filter(l => l.sellerId === currentUser.id).length}
           />
         )}
         
         {currentView === 'create' && (
           <CreateListingForm 
-             onCancel={() => setCurrentView('tools')}
+             onCancel={() => navigateTo('tools')}
              onSubmit={handleCreateAction}
           />
         )}
@@ -287,14 +360,14 @@ const App: React.FC = () => {
             user={currentUser}
             userListings={listings.filter(l => l.sellerId === currentUser.id)}
             onLogout={handleLogout}
-            onListingClick={(l) => console.log('Clicked', l.title)}
+            onListingClick={handleListingClick}
             onBoost={handleBoostListing}
           />
         )}
 
       </main>
 
-      <BottomNav />
+      {currentView !== 'listing' && <BottomNav />}
     </div>
   );
 };

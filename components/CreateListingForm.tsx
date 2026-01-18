@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Camera, X, Check, MapPin, DollarSign, Tag, Info, ChevronLeft, Upload } from 'lucide-react';
-import { CATEGORIES, APPROVED_LOCATIONS } from '../constants';
+import { CATEGORIES, APPROVED_LOCATIONS, getIslandFromLocation } from '../constants';
 import { Listing } from '../types';
 
 interface CreateListingFormProps {
@@ -50,6 +50,8 @@ const CreateListingForm: React.FC<CreateListingFormProps> = ({ onCancel, onSubmi
     e.preventDefault();
     if (!validate()) return;
 
+    const detectedIsland = getIslandFromLocation(formData.location);
+
     const newListing: Listing = {
       id: Date.now().toString(),
       title: formData.title,
@@ -63,7 +65,7 @@ const CreateListingForm: React.FC<CreateListingFormProps> = ({ onCancel, onSubmi
       sellerName: 'You',
       sellerRating: 5.0,
       createdAt: new Date().toISOString(),
-      island: 'hawaii',
+      island: detectedIsland,
       negotiable: formData.negotiable
     };
 
@@ -201,7 +203,7 @@ const CreateListingForm: React.FC<CreateListingFormProps> = ({ onCancel, onSubmi
                value={formData.location}
                onChange={e => setFormData({...formData, location: e.target.value})}
              >
-               <option value="" disabled>Select Location (Hawaiʻi Island)</option>
+               <option value="" disabled>Select Location</option>
                {APPROVED_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
              </select>
            </div>

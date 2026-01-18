@@ -1,3 +1,5 @@
+export type Island = 'hawaii' | 'oahu' | 'maui' | 'kauai' | 'molokai' | 'lanai';
+
 export interface Listing {
   id: string;
   title: string;
@@ -10,11 +12,16 @@ export interface Listing {
   sellerId: string;
   sellerName: string;
   sellerPhone?: string; // Added for SMS functionality
+  sellerPaymentHandles?: { // Added for Payment functionality
+    venmo?: string;
+    cashapp?: string;
+    zelle?: string;
+  };
   sellerRating: number;
   createdAt: string;
   boostedUntil?: string;
   coordinates?: { x: number; y: number }; // Relative coordinates for mock map
-  island: 'hawaii';
+  island: Island;
   negotiable?: boolean;
 }
 
@@ -26,7 +33,7 @@ export interface User {
   profilePhoto: string;
   verified: boolean;
   createdAt: string;
-  island: 'hawaii';
+  island: Island;
 }
 
 export interface ChatMessage {
@@ -73,4 +80,4 @@ export interface MessageDraft {
   };
 }
 
-export type ViewState = 'home' | 'browse' | 'chat' | 'profile' | 'map' | 'tools' | 'create';
+export type ViewState = 'home' | 'browse' | 'chat' | 'profile' | 'map' | 'tools' | 'create' | 'listing';

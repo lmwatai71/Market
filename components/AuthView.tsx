@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User as UserType } from '../types';
-import { MOCK_USER, APP_NAME, APPROVED_LOCATIONS, findNearestLocation } from '../constants';
+import { MOCK_USER, APP_NAME, APPROVED_LOCATIONS, findNearestLocation, getIslandFromLocation } from '../constants';
 import { Mail, Lock, User, MapPin, ArrowRight, ShieldCheck, Crosshair } from 'lucide-react';
 import PhoneVerification from './PhoneVerification';
 
@@ -38,7 +38,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
           setFormData(prev => ({ ...prev, location: nearest }));
           setError(''); // Clear any previous errors
         } else {
-          setError("You seem to be outside our service area (Hawaiʻi Island).");
+          setError("You seem to be outside our service area.");
         }
         setIsLocating(false);
       },
@@ -79,6 +79,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
          } else {
            // Sign Up
            if (formData.email && formData.password && formData.name && formData.location) {
+             const detectedIsland = getIslandFromLocation(formData.location);
+             
              userAttempt = {
                id: `u_${Date.now()}`,
                name: formData.name,
@@ -87,7 +89,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                profilePhoto: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`,
                verified: false,
                createdAt: new Date().toISOString(),
-               island: 'hawaii'
+               island: detectedIsland
              };
            } else {
              setError('Please fill in all required fields, including location.');
@@ -142,7 +144,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
           <h1 className="text-3xl font-serif font-bold text-white mb-2 relative z-10">{APP_NAME}</h1>
           <p className="text-white/80 text-sm relative z-10">
-            {isLogin ? 'Welcome back to the marketplace' : 'Join our Hawaiʻi Island community'}
+            {isLogin ? 'Welcome back to the marketplace' : 'Join our Hawaiʻi community'}
           </p>
         </div>
 
@@ -170,7 +172,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
                     required={!isLogin}
                   >
-                    <option value="" disabled>Select Location (Hawaiʻi Island)</option>
+                    <option value="" disabled>Select Location</option>
                     {APPROVED_LOCATIONS.map(loc => (
                       <option key={loc} value={loc}>{loc}</option>
                     ))}
@@ -186,9 +188,6 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                   >
                     <Crosshair size={20} className={isLocating ? "animate-spin" : ""} />
                   </button>
-                </div>
-                <div className="text-[10px] text-lava/60 px-1">
-                  * PIKO MARKETPLACE is currently available only on Hawaiʻi Island.
                 </div>
               </>
             )}

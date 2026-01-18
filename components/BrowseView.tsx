@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Listing, User } from '../types';
 import ListingCard from './ListingCard';
 import { FilterX } from 'lucide-react';
+import { CATEGORIES } from '../constants';
 
 interface BrowseViewProps {
   listings: Listing[];
@@ -16,6 +17,7 @@ interface BrowseViewProps {
   onClearFilters: () => void;
   currentUser?: User;
   onBoost?: (listing: Listing) => void;
+  onCategorySelect: (category: string) => void;
 }
 
 const BrowseView: React.FC<BrowseViewProps> = ({ 
@@ -24,7 +26,8 @@ const BrowseView: React.FC<BrowseViewProps> = ({
   onListingClick,
   onClearFilters,
   currentUser,
-  onBoost
+  onBoost,
+  onCategorySelect
 }) => {
   const filteredListings = useMemo(() => {
     return listings.filter(item => {
@@ -66,6 +69,34 @@ const BrowseView: React.FC<BrowseViewProps> = ({
 
   return (
     <div className="p-4 pb-24 max-w-7xl mx-auto">
+      
+      {/* Category Tabs - Scrollable & Sticky */}
+      <div className="flex overflow-x-auto gap-2 pb-2 mb-4 scrollbar-hide -mx-4 px-4 sticky top-[88px] z-30 bg-cloud/95 backdrop-blur-sm pt-2">
+        <button
+            onClick={() => onCategorySelect('')}
+            className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition border ${
+            !activeFilters.category 
+                ? 'bg-kai text-white border-kai shadow-md' 
+                : 'bg-white border-mist text-lava/70 hover:bg-mist/20'
+            }`}
+        >
+            All
+        </button>
+        {CATEGORIES.map(cat => (
+            <button
+                key={cat}
+                onClick={() => onCategorySelect(cat)}
+                className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition border ${
+                activeFilters.category === cat
+                    ? 'bg-kai text-white border-kai shadow-md' 
+                    : 'bg-white border-mist text-lava/70 hover:bg-mist/20'
+                }`}
+            >
+                {cat}
+            </button>
+        ))}
+      </div>
+
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-serif font-bold text-koa">
           {activeFilters.category || "All Listings"}
