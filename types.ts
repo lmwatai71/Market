@@ -1,5 +1,13 @@
 export type Island = 'hawaii' | 'oahu' | 'maui' | 'kauai' | 'molokai' | 'lanai';
 
+export interface Review {
+  id: string;
+  reviewerName: string;
+  rating: number; // 1-5
+  comment: string;
+  date: string;
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -18,6 +26,7 @@ export interface Listing {
     zelle?: string;
   };
   sellerRating: number;
+  sellerReviewCount: number; // Added for social proof
   createdAt: string;
   boostedUntil?: string;
   coordinates?: { x: number; y: number }; // Relative coordinates for mock map

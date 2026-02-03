@@ -64,6 +64,7 @@ const CreateListingForm: React.FC<CreateListingFormProps> = ({ onCancel, onSubmi
       sellerId: 'current-user', // Will be overwritten by App.tsx
       sellerName: 'You',
       sellerRating: 5.0,
+      sellerReviewCount: 0,
       createdAt: new Date().toISOString(),
       island: detectedIsland,
       negotiable: formData.negotiable

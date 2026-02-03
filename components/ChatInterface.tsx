@@ -176,6 +176,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           sellerId: 'current-user',
           sellerName: 'You',
           sellerRating: 5.0,
+          sellerReviewCount: 0,
           createdAt: new Date().toISOString(),
           island: 'hawaii' // Enforce island
        };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, Share, Flag, MapPin, Calendar, ShieldCheck, MessageCircle, Smartphone, User, Star, ChevronRight, CheckCircle, Send, AlertTriangle, CreditCard, Banknote, X, Copy, ExternalLink, Lock } from 'lucide-react';
 import { Listing, User as UserType } from '../types';
 import { submitReport } from '../services/reportService';
+import { getReviewsForSeller } from '../constants';
 
 interface ListingDetailsViewProps {
   listing: Listing;
@@ -27,6 +28,9 @@ const ListingDetailsView: React.FC<ListingDetailsViewProps> = ({ listing, curren
 
   // Mock Card Form Data
   const [cardData, setCardData] = useState({ number: '', expiry: '', cvc: '', zip: '' });
+
+  // Get reviews
+  const reviews = getReviewsForSeller(listing.sellerId);
 
   // --- Image Gallery Logic ---
   const nextPhoto = () => {
@@ -215,13 +219,43 @@ const ListingDetailsView: React.FC<ListingDetailsViewProps> = ({ listing, curren
                             <div className="flex items-center text-xs text-lava/60">
                                 <Star size={12} className="text-sunrise fill-sunrise mr-1" />
                                 <span className="font-semibold text-lava mr-1">{listing.sellerRating}</span>
-                                <span>Rating</span>
+                                <span>Rating • {reviews.length} reviews</span>
                             </div>
                         </div>
                     </div>
                     {/* Only show viewing profile button if logic exists, for now static */}
                     <button className="text-sm font-semibold text-kai hover:underline">View Profile</button>
                 </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="border-t border-mist pt-6">
+                <h3 className="font-bold text-lava mb-4">Reviews ({reviews.length})</h3>
+                {reviews.length > 0 ? (
+                    <div className="space-y-4">
+                        {reviews.map(review => (
+                            <div key={review.id} className="bg-mist/10 p-4 rounded-xl">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="font-bold text-sm text-lava">{review.reviewerName}</span>
+                                    <span className="text-xs text-lava/50">{review.date}</span>
+                                </div>
+                                <div className="flex text-sunrise mb-2">
+                                    {[...Array(5)].map((_, i) => (
+                                        <Star 
+                                            key={i} 
+                                            size={12} 
+                                            fill={i < review.rating ? "currentColor" : "none"} 
+                                            className={i < review.rating ? "text-sunrise" : "text-mist"} 
+                                        />
+                                    ))}
+                                </div>
+                                <p className="text-sm text-lava/80 italic">"{review.comment}"</p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-lava/50 italic">No reviews yet.</p>
+                )}
             </div>
         </div>
       </div>

@@ -370,7 +370,10 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick, isOwner, on
              <div className="flex items-center gap-2">
                <div className="flex items-center">
                  <Star size={12} className="text-sunrise fill-sunrise mr-1" />
-                 <span>{listing.sellerRating}</span>
+                 <span className="font-semibold">{listing.sellerRating}</span>
+                 {listing.sellerReviewCount > 0 && (
+                   <span className="text-lava/50 ml-1">({listing.sellerReviewCount})</span>
+                 )}
                </div>
              </div>
           </div>

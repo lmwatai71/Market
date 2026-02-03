@@ -1,4 +1,4 @@
-import { Listing, User, Island } from './types';
+import { Listing, User, Island, Review } from './types';
 
 export const APP_NAME = "PIKO MARKETPLACE";
 
@@ -161,6 +161,20 @@ export const findNearestLocation = (lat: number, lng: number): string | null => 
   return nearest;
 };
 
+export const MOCK_REVIEWS: Review[] = [
+  { id: 'r1', reviewerName: 'Malia K.', rating: 5, comment: 'Super friendly and item was exactly as described! Mahalo!', date: 'Oct 2023' },
+  { id: 'r2', reviewerName: 'John D.', rating: 4, comment: 'Good communication, slightly late but all good.', date: 'Sep 2023' },
+  { id: 'r3', reviewerName: 'Pua L.', rating: 5, comment: 'Quick response and easy pickup.', date: 'Nov 2023' },
+  { id: 'r4', reviewerName: 'David S.', rating: 5, comment: 'Honest seller. The surfboard rides like a dream.', date: 'Aug 2023' },
+];
+
+export const getReviewsForSeller = (sellerId: string): Review[] => {
+  // In a real app, verify sellerId. Here, return random subset for demo purposes.
+  // Use pseudo-random based on string length to consistent results per seller
+  const count = (sellerId.length % 3) + 1;
+  return MOCK_REVIEWS.slice(0, count + 1);
+};
+
 export const MOCK_USER: User = {
   id: 'u1',
   name: 'Kaimana',
@@ -186,6 +200,7 @@ export const MOCK_LISTINGS: Listing[] = [
     sellerName: 'Uncle Bob',
     sellerPhone: '808-555-0102',
     sellerRating: 4.9,
+    sellerReviewCount: 12,
     createdAt: '2023-10-25',
     boostedUntil: '2023-11-01',
     coordinates: { x: 75, y: 40 }, // Hilo side
@@ -205,6 +220,7 @@ export const MOCK_LISTINGS: Listing[] = [
     sellerName: 'Lani',
     sellerPhone: '808-555-0103',
     sellerRating: 5.0,
+    sellerReviewCount: 4,
     createdAt: '2023-10-26',
     coordinates: { x: 20, y: 50 }, // Kona side
     island: 'hawaii',
@@ -223,6 +239,7 @@ export const MOCK_LISTINGS: Listing[] = [
     sellerName: 'Keoni',
     sellerPhone: '808-555-0104',
     sellerRating: 4.7,
+    sellerReviewCount: 8,
     createdAt: '2023-10-20',
     coordinates: { x: 30, y: 80 }, 
     island: 'oahu',
@@ -241,6 +258,7 @@ export const MOCK_LISTINGS: Listing[] = [
     sellerName: 'Sarah',
     sellerPhone: '808-555-0105',
     sellerRating: 4.5,
+    sellerReviewCount: 2,
     createdAt: '2023-10-27',
     coordinates: { x: 40, y: 20 },
     island: 'maui',
