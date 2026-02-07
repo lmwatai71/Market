@@ -6,8 +6,9 @@ const SafetyBanner = () => {
 
   if (!visible) return null;
 
+  // Removed 'sticky top-16' to prevent layout conflicts. Now it scrolls with page.
   return (
-    <div className="bg-koa text-white text-[10px] py-1.5 px-4 flex justify-between items-center sticky top-16 z-40 shadow-md">
+    <div className="bg-koa text-white text-[10px] py-1.5 px-4 flex justify-between items-center z-40 shadow-md">
         <div className="flex items-center gap-1.5">
             <MapPin size={12} className="text-sunrise animate-pulse" />
             <span className="font-bold tracking-wider uppercase">Statewide Marketplace</span>

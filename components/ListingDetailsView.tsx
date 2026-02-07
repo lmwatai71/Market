@@ -59,9 +59,14 @@ const ListingDetailsView: React.FC<ListingDetailsViewProps> = ({ listing, curren
       }).catch(console.error);
     } else {
       // Fallback
-      navigator.clipboard.writeText(window.location.href);
-      setShowShareTooltip(true);
-      setTimeout(() => setShowShareTooltip(false), 2000);
+      try {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          setShowShareTooltip(true);
+          setTimeout(() => setShowShareTooltip(false), 2000);
+        });
+      } catch (e) {
+        console.warn("Clipboard access denied");
+      }
     }
   };
 
@@ -91,6 +96,16 @@ const ListingDetailsView: React.FC<ListingDetailsViewProps> = ({ listing, curren
       venmo: listing.sellerName.replace(/\s+/g, '').toLowerCase() + "_piko",
       cashapp: "$" + listing.sellerName.replace(/\s+/g, '').toLowerCase(),
       zelle: listing.sellerPhone || "808-555-0199"
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+      try {
+          navigator.clipboard.writeText(text).then(() => {
+              alert(`${label} copied to clipboard!`);
+          });
+      } catch (e) {
+          alert(`Could not copy ${label}. Please copy manually: ${text}`);
+      }
   };
 
   return (
@@ -478,10 +493,7 @@ const ListingDetailsView: React.FC<ListingDetailsViewProps> = ({ listing, curren
                                         </a>
                                         <button 
                                             className="w-full bg-mist/20 text-lava font-bold py-3 rounded-xl hover:bg-mist/30 flex items-center justify-center gap-2"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(sellerHandles.venmo!);
-                                                alert("Venmo handle copied!");
-                                            }}
+                                            onClick={() => copyToClipboard(sellerHandles.venmo!, "Venmo handle")}
                                         >
                                             <Copy size={18} /> Copy Handle
                                         </button>
@@ -508,10 +520,7 @@ const ListingDetailsView: React.FC<ListingDetailsViewProps> = ({ listing, curren
                                         </a>
                                         <button 
                                             className="w-full bg-mist/20 text-lava font-bold py-3 rounded-xl hover:bg-mist/30 flex items-center justify-center gap-2"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(sellerHandles.cashapp!);
-                                                alert("CashTag copied!");
-                                            }}
+                                            onClick={() => copyToClipboard(sellerHandles.cashapp!, "CashTag")}
                                         >
                                             <Copy size={18} /> Copy CashTag
                                         </button>
@@ -530,10 +539,7 @@ const ListingDetailsView: React.FC<ListingDetailsViewProps> = ({ listing, curren
                                     <div className="space-y-3">
                                         <button 
                                             className="w-full bg-[#6D1ED4] text-white font-bold py-3 rounded-xl shadow-md flex items-center justify-center gap-2 hover:opacity-90"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(sellerHandles.zelle!);
-                                                alert("Zelle info copied!");
-                                            }}
+                                            onClick={() => copyToClipboard(sellerHandles.zelle!, "Zelle info")}
                                         >
                                             <Copy size={18} /> Copy Info
                                         </button>

@@ -70,8 +70,11 @@ const BrowseView: React.FC<BrowseViewProps> = ({
   return (
     <div className="p-4 pb-24 max-w-7xl mx-auto">
       
-      {/* Category Tabs - Scrollable & Sticky */}
-      <div className="flex overflow-x-auto gap-2 pb-2 mb-4 scrollbar-hide -mx-4 px-4 sticky top-[88px] z-30 bg-cloud/95 backdrop-blur-sm pt-2">
+      {/* Category Tabs - Scrollable & Sticky 
+          Fixed top-16 to sit right under header. 
+          Assuming SafetyBanner is not sticky, or if it is, we accept overlap or spacing issues in favor of cleaner code.
+      */}
+      <div className="flex overflow-x-auto gap-2 pb-2 mb-4 scrollbar-hide -mx-4 px-4 sticky top-16 z-30 bg-cloud/95 backdrop-blur-sm pt-2">
         <button
             onClick={() => onCategorySelect('')}
             className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition border ${

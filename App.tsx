@@ -89,6 +89,11 @@ const App: React.FC = () => {
     if (currentUser) {
       newListing.sellerId = currentUser.id;
       newListing.sellerName = currentUser.name;
+      newListing.sellerRating = currentUser.rating;
+      // Ensure sellerReviewCount is initialized if not present
+      if (newListing.sellerReviewCount === undefined) {
+          newListing.sellerReviewCount = 0;
+      }
     }
     // Auto-detect island if missing from AI draft
     if (!newListing.island && newListing.location) {
